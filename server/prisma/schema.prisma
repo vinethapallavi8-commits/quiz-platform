@@ -1,0 +1,104 @@
+generator client {
+  provider   = "prisma-client-js"
+  engineType = "binary"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String   @unique
+  password  String
+  role      String   @default("STUDENT")
+  status    String   @default("ACTIVE")
+  createdAt DateTime @default(now())
+
+  attempts  Attempt[]
+}
+
+model Category {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+
+  quizzes     Quiz[]
+}
+
+model Quiz {
+  id             Int      @id @default(autoincrement())
+  title          String
+  description    String?
+  categoryId     Int
+  difficulty     String
+  duration       Int
+  passingScore   Int
+  maxAttempts    Int      @default(1)
+  status         String   @default("DRAFT")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  category       Category   @relation(fields: [categoryId], references: [id])
+  questions      Question[]
+  attempts       Attempt[]
+}
+
+model Question {
+  id            Int      @id @default(autoincrement())
+  quizId        Int
+  questionText  String
+  marks         Int      @default(1)
+  explanation   String?
+  difficulty    String?
+  createdAt     DateTime @default(now())
+
+  quiz          Quiz      @relation(fields: [quizId], references: [id])
+  options       Option[]
+  answers       Answer[]
+}
+
+model Option {
+  id          Int      @id @default(autoincrement())
+  questionId  Int
+  optionText  String
+  isCorrect   Boolean  @default(false)
+
+  question    Question  @relation(fields: [questionId], references: [id])
+  answers     Answer[]
+}
+
+model Attempt {
+  id               Int       @id @default(autoincrement())
+  quizId           Int
+  userId           Int
+  score            Int?
+  percentage       Float?
+  correctAnswers   Int?
+  incorrectAnswers Int?
+  unanswered       Int?
+  timeTaken        Int?
+  status           String?
+  startedAt        DateTime  @default(now())
+  completedAt      DateTime?
+
+  quiz             Quiz      @relation(fields: [quizId], references: [id])
+  user             User      @relation(fields: [userId], references: [id])
+  answers          Answer[]
+}
+
+model Answer {
+  id               Int      @id @default(autoincrement())
+  attemptId        Int
+  questionId       Int
+  selectedOptionId Int?
+  isCorrect        Boolean?
+
+  attempt          Attempt   @relation(fields: [attemptId], references: [id])
+  question         Question  @relation(fields: [questionId], references: [id])
+  selectedOption   Option?   @relation(fields: [selectedOptionId], references: [id])
+}
